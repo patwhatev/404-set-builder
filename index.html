@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SP-404 MK2</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #111; color: #ddd; font-family: 'Courier New', monospace; font-size: 13px; min-height: 100vh; }
+
+    /* banner */
+    #banner { display:none; background:#c0392b; color:#fff; text-align:center; padding:12px; font-size:14px; font-weight:bold; cursor:pointer; letter-spacing:2px; animation:pulse 2s infinite; }
+    #banner.show { display:block; }
+    @keyframes pulse { 0%,100%{background:#c0392b} 50%{background:#e74c3c} }
+
+    /* header */
+    header { display:flex; align-items:stretch; border-bottom:1px solid #222; height:44px; }
+    h1 { font-size:12px; color:#555; letter-spacing:3px; display:flex; align-items:center; padding:0 16px; white-space:nowrap; }
+    nav { display:flex; flex:1; }
+    .tab { background:none; border:none; border-bottom:2px solid transparent; color:#555; padding:0 18px; font-family:inherit; font-size:11px; letter-spacing:2px; cursor:pointer; }
+    .tab:hover { color:#999; background:none; border-bottom-color:#333; }
+    .tab.active { color:#2ecc71; border-bottom-color:#2ecc71; }
+
+    /* buttons */
+    button { background:#1a1a1a; color:#aaa; border:1px solid #333; padding:5px 12px; cursor:pointer; font-family:inherit; font-size:11px; letter-spacing:1px; transition:background .1s,color .1s,border-color .1s; }
+    button:hover { background:#2a2a2a; color:#fff; border-color:#555; }
+    button.ok { border-color:#2ecc71; color:#2ecc71; }
+    button.ok:hover { background:#0d2b1a; }
+    button.del { border-color:#444; color:#777; }
+    button.del:hover { background:#2b0d0d; border-color:#e74c3c; color:#e74c3c; }
+    button.arrow { padding:3px 10px; font-size:14px; }
+
+    /* toolbar */
+    .toolbar { padding:10px 16px; border-bottom:1px solid #1a1a1a; display:flex; gap:8px; align-items:center; }
+    input[type="file"] { display:none; }
+
+    /* pads table */
+    .wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; }
+    th { background:#161616; padding:7px 8px; text-align:left; font-size:10px; color:#555; letter-spacing:2px; border-bottom:1px solid #222; white-space:nowrap; cursor:pointer; user-select:none; }
+    th:hover { color:#999; }
+    th.asc::after { content:' ▲'; color:#2ecc71; }
+    th.desc::after { content:' ▼'; color:#2ecc71; }
+    th.no-sort { cursor:default; }
+    td { padding:5px 8px; border-bottom:1px solid #1a1a1a; vertical-align:middle; white-space:nowrap; }
+    td.notes-cell { white-space:normal; max-width:200px; color:#666; font-size:11px; }
+    tr:hover > td { background:#161616; }
+    tr.editing > td { background:#0a1a0a; }
+    td input, td select, td textarea { background:#0a0a0a; color:#ddd; border:1px solid #2ecc71; padding:3px 5px; font-family:inherit; font-size:12px; width:100%; }
+    td input { min-width:80px; }
+    td textarea { resize:vertical; min-height:36px; min-width:150px; }
+
+    /* pills / tags */
+    .pill { background:#1a1a3a; color:#8888ff; padding:2px 7px; border-radius:2px; font-weight:bold; font-size:12px; letter-spacing:1px; }
+    .tag { padding:2px 6px; border-radius:2px; font-size:11px; }
+    /* mood */
+    .tag.comf   { background:#0d2b2b; color:#1abc9c; }
+    .tag.ints   { background:#2b1a0d; color:#e67e22; }
+    .tag.mixed  { background:#2b0d2b; color:#e91e8c; }
+    /* theme */
+    .tag.sad-mad      { background:#0d0d2b; color:#9b59b6; }
+    .tag.doomer       { background:#1a1a1a; color:#555; }
+    .tag.personal     { background:#2b1a0d; color:#e67e22; }
+    .tag.tone-set     { background:#0d2b1a; color:#2ecc71; }
+    .tag.bread-butter { background:#2b2b0d; color:#f1c40f; }
+    .tag.disrupt      { background:#2b1010; color:#e74c3c; }
+    .tag.horny        { background:#2b102b; color:#e91e8c; }
+    .tag.defeated     { background:#1a1a2b; color:#7f8c8d; }
+    .tag.positive     { background:#0d2b0d; color:#27ae60; }
+
+    .acts { display:flex; gap:4px; }
+    #count { color:#444; font-size:11px; padding:10px 16px; }
+
+    /* unused section */
+    #unused-section { padding:8px 16px 16px; border-top:1px solid #1a1a1a; display:none; }
+    #unused-section summary { font-size:10px; color:#444; letter-spacing:2px; cursor:pointer; user-select:none; padding:4px 0; }
+    #unused-section summary:hover { color:#888; }
+    #unused-pills { display:flex; flex-wrap:wrap; gap:6px; padding-top:10px; }
+    .unused-pill-wrap { display:inline-flex; align-items:center; }
+    .unused-pill { background:#151515; border:1px solid #252525; color:#444; padding:3px 9px; font-family:inherit; font-size:11px; cursor:pointer; letter-spacing:1px; }
+    .unused-pill:hover { border-color:#555; color:#999; background:#1e1e1e; }
+    .unused-pill-del { background:#151515; border:1px solid #252525; border-left:none; color:#2a2a2a; padding:3px 6px; font-family:inherit; font-size:11px; cursor:pointer; }
+    .unused-pill-del:hover { background:#2b0d0d; border-color:#e74c3c; color:#e74c3c; }
+
+    /* sets list */
+    .set-row { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid #1a1a1a; }
+    .set-row:hover { background:#161616; }
+    .set-name { flex:1; font-size:13px; letter-spacing:1px; }
+    .set-count { color:#555; font-size:11px; min-width:70px; }
+
+    /* builder */
+    .builder-header { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid #222; }
+    #builder-name { background:#0a0a0a; color:#ddd; border:1px solid #333; padding:5px 10px; font-family:inherit; font-size:13px; letter-spacing:2px; width:220px; }
+    #builder-name:focus { border-color:#2ecc71; outline:none; }
+    .builder-cols { display:flex; height:calc(100vh - 130px); }
+    .builder-col { flex:1; display:flex; flex-direction:column; border-right:1px solid #1a1a1a; overflow:hidden; }
+    .builder-col:last-child { border-right:none; }
+    .builder-col-hd { padding:8px 16px; font-size:10px; color:#555; letter-spacing:2px; border-bottom:1px solid #1a1a1a; background:#161616; flex-shrink:0; }
+    .builder-col-body { flex:1; overflow-y:auto; }
+    .bl-row, .br-row { display:flex; align-items:center; gap:8px; padding:6px 10px; border-bottom:1px solid #111; }
+    .bl-row:hover, .br-row:hover { background:#161616; }
+    .br-row.drag-over { border-top:2px solid #2ecc71; background:#0a1a0a; }
+    .br-row.dragging { opacity:0.3; }
+    .row-info { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+    .row-info .artist { color:#666; font-size:11px; }
+    .row-num { color:#444; font-size:11px; min-width:20px; text-align:right; }
+    .drag-handle { cursor:grab; color:#333; font-size:16px; user-select:none; }
+    .drag-handle:hover { color:#666; }
+    .empty-msg { color:#444; font-size:11px; padding:16px; letter-spacing:1px; }
+    .proj-pill { padding:2px 6px; border-radius:2px; font-weight:bold; font-size:12px; letter-spacing:1px; border:1px solid; }
+  </style>
+</head>
+<body>
+
+<div id="banner" onclick="exportCSV()">⚠ UNSAVED CHANGES — CLICK TO EXPORT CSV</div>
+
+<header>
+  <h1>SP-404 MK2</h1>
+  <nav>
+    <button class="tab active" data-view="pads" onclick="switchView('pads')">PADS</button>
+    <button class="tab" data-view="sets" onclick="switchView('sets')">SETS</button>
+  </nav>
+</header>
+
+<!-- PADS VIEW -->
+<div id="view-pads">
+  <div class="toolbar">
+    <button class="ok" onclick="addRow()">+ ADD PAD</button>
+    <label>
+      <button onclick="this.closest('label').querySelector('input').click()">IMPORT CSV</button>
+      <input type="file" accept=".csv" onchange="importCSV(event)">
+    </label>
+    <button class="ok" onclick="exportCSV()">EXPORT CSV</button>
+  </div>
+  <div class="wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-col="project" onclick="sortBy(this)">PROJ</th>
+          <th data-col="bank" onclick="sortBy(this)">BANK</th>
+          <th data-col="pad" onclick="sortBy(this)">PAD</th>
+          <th data-col="title" onclick="sortBy(this)">TITLE</th>
+          <th data-col="artist" onclick="sortBy(this)">ARTIST</th>
+          <th data-col="fx1" onclick="sortBy(this)">FX1</th>
+          <th data-col="fx2" onclick="sortBy(this)">FX2</th>
+          <th data-col="theme" onclick="sortBy(this)">THEME</th>
+          <th data-col="mood" onclick="sortBy(this)">MOOD</th>
+          <th class="no-sort">NOTES</th>
+          <th class="no-sort"></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div id="count"></div>
+  <details id="unused-section">
+    <summary>UNUSED PADS (<span id="unused-count">0</span>)</summary>
+    <div id="unused-pills"></div>
+  </details>
+</div>
+
+<!-- SETS VIEW -->
+<div id="view-sets" style="display:none">
+  <div class="toolbar">
+    <button class="ok" onclick="newSet()">+ NEW SET</button>
+    <button onclick="pickSetsDir()" style="color:#555;border-color:#2a2a2a">SET EXPORT FOLDER</button>
+  </div>
+  <div id="sets-list"></div>
+</div>
+
+<!-- BUILDER VIEW -->
+<div id="view-builder" style="display:none">
+  <div class="builder-header">
+    <button onclick="switchView('sets')">← SETS</button>
+    <input id="builder-name" placeholder="Set name..." onblur="saveBuilderName()" onkeydown="if(event.key==='Enter')this.blur()">
+    <button onclick="printSet(currentSetId)">PRINT SET</button>
+    <button class="ok" onclick="exportSet(currentSetId)">EXPORT SET</button>
+  </div>
+  <div class="builder-cols">
+    <div class="builder-col">
+      <div class="builder-col-hd">MASTER LIST — click → to add</div>
+      <div class="builder-col-body" id="builder-left"></div>
+    </div>
+    <div class="builder-col">
+      <div class="builder-col-hd">SET ORDER — drag to reorder</div>
+      <div class="builder-col-body" id="builder-right"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── constants ────────────────────────────────────────────────────────────────
+const KEY      = 'sp404';
+const SETS_KEY = 'sp404_sets';
+const PROJECTS = Array.from({length:16}, (_, i) => i + 1);
+const BANKS    = ['A','B','C','D','E','F','G','H','I','J'];
+const PADS     = Array.from({length:16}, (_, i) => i + 1);
+
+// ── state ────────────────────────────────────────────────────────────────────
+let rows = [], sortCol = null, sortDir = 1, editId = null, savedJSON = null, fileHandle = null;
+let sets = [], currentSetId = null, setsDirHandle = null, dragIdx = null;
+let currentView = 'pads';
+
+// ── utils ────────────────────────────────────────────────────────────────────
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function h(s)  { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function tagClass(v) { return String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+
+const PROJ_COLORS = [
+  '#e74c3c','#e67e22','#f1c40f','#2ecc71',
+  '#1abc9c','#3498db','#9b59b6','#e91e8c',
+  '#ff5722','#8bc34a','#00bcd4','#ff9800',
+  '#795548','#607d8b','#c0392b','#9c27b0'
+];
+function projColor(p) { return PROJ_COLORS[(Number(p) - 1) % PROJ_COLORS.length]; }
+function projPill(r) {
+  const c = projColor(r.project);
+  return `<span class="proj-pill" style="color:${c};background:${c}18;border-color:${c}44">P${h(r.project)}</span>`;
+}
+
+const ENTER_SAVE = `onkeydown="if(event.key==='Enter'){event.preventDefault();saveRow(editId);}"`;
+
+function sel(opts, cur, field) {
+  const options = opts.map(o => `<option${String(o) === String(cur) ? ' selected' : ''}>${o}</option>`).join('');
+  return `<select data-f="${field}" ${ENTER_SAVE}>${options}</select>`;
+}
+
+// ── navigation ───────────────────────────────────────────────────────────────
+function switchView(v) {
+  currentView = v;
+  ['pads','sets','builder'].forEach(name =>
+    document.getElementById('view-' + name).style.display = v === name ? '' : 'none'
+  );
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
+  if (v === 'pads')    render();
+  if (v === 'sets')    renderSets();
+  if (v === 'builder') renderBuilder();
+}
+
+// ── persistence ──────────────────────────────────────────────────────────────
+function deduplicate(rows) {
+  const seen = new Map();
+  return rows.filter(r => {
+    const key = `${r.project}-${r.bank}-${r.pad}`;
+    if (!seen.has(key)) { seen.set(key, r); return true; }
+    const prev = seen.get(key);
+    const score = r => [r.title, r.artist, r.fx1, r.fx2].filter(v => String(v||'').trim()).length;
+    if (score(r) > score(prev)) { seen.set(key, r); return true; }
+    return false;
+  });
+}
+
+function migrate(rows) {
+  const moodMap = { light:'comf', dark:'ints' };
+  rows.forEach(r => {
+    if (moodMap[r.mood]) r.mood = moodMap[r.mood];
+    if (r.placement !== undefined && r.theme === undefined) {
+      r.theme = r.placement;
+      delete r.placement;
+    }
+  });
+  return rows;
+}
+
+function load() {
+  rows      = deduplicate(migrate(JSON.parse(localStorage.getItem(KEY)      || '[]')));
+  sets      = JSON.parse(localStorage.getItem(SETS_KEY)         || '[]');
+  savedJSON = localStorage.getItem(KEY + '_saved')              || null;
+  localStorage.setItem(KEY, JSON.stringify(rows));
+  checkDirty();
+  render();
+}
+
+function persist() {
+  localStorage.setItem(KEY, JSON.stringify(rows));
+  checkDirty();
+  render();
+}
+
+function saveSets() {
+  localStorage.setItem(SETS_KEY, JSON.stringify(sets));
+}
+
+function checkDirty() {
+  const clean = (savedJSON === JSON.stringify(rows)) || (!savedJSON && rows.length === 0);
+  document.getElementById('banner').classList.toggle('show', !clean);
+}
+
+// ── pad helpers ──────────────────────────────────────────────────────────────
+function isUnused(r) {
+  return !String(r.title||'').trim() && !String(r.artist||'').trim() &&
+         !String(r.fx1||'').trim()   && !String(r.fx2||'').trim();
+}
+
+function nextAvailablePad(project, bank) {
+  const taken = new Set(
+    rows.filter(r => String(r.project) === String(project) && r.bank === bank)
+        .map(r => Number(r.pad))
+  );
+  for (let i = 1; i <= 16; i++) { if (!taken.has(i)) return i; }
+  return null;
+}
+
+function nextAvailableSlot(project, startBank) {
+  const startIdx = BANKS.indexOf(startBank);
+  for (let b = startIdx; b < BANKS.length; b++) {
+    const pad = nextAvailablePad(project, BANKS[b]);
+    if (pad !== null) return { bank: BANKS[b], pad };
+  }
+  return { bank: startBank, pad: 1 };
+}
+
+// ── pads: render ─────────────────────────────────────────────────────────────
+function render() {
+  const sorted = [...rows];
+  if (sortCol) {
+    sorted.sort((a, b) => {
+      if (sortCol === 'pad') return sortDir * (Number(a.pad) - Number(b.pad));
+      const av = String(a[sortCol] ?? ''), bv = String(b[sortCol] ?? '');
+      return sortDir * (av < bv ? -1 : av > bv ? 1 : 0);
+    });
+  }
+
+  const activeRows = sorted.filter(r => !isUnused(r) || r.id === editId);
+  const unusedRows = sorted.filter(r =>  isUnused(r) && r.id !== editId)
+    .sort((a, b) => {
+      const pd = Number(a.project) - Number(b.project);
+      if (pd) return pd;
+      if (a.bank !== b.bank) return a.bank < b.bank ? -1 : 1;
+      return Number(a.pad) - Number(b.pad);
+    });
+
+  document.getElementById('count').textContent =
+    activeRows.length === 0 ? 'no pads indexed yet' : `${activeRows.length} pad${activeRows.length !== 1 ? 's' : ''} indexed`;
+
+  const unusedSection = document.getElementById('unused-section');
+  if (unusedRows.length > 0) {
+    unusedSection.style.display = '';
+    document.getElementById('unused-count').textContent = unusedRows.length;
+    document.getElementById('unused-pills').innerHTML = unusedRows.map(r =>
+      `<span class="unused-pill-wrap">
+        <button class="unused-pill" onclick="editRow('${r.id}')">P${h(r.project)}-${h(r.bank)}${h(r.pad)}</button>
+        <button class="unused-pill-del" onclick="delUnused('${r.id}')" title="delete">×</button>
+      </span>`
+    ).join('');
+  } else {
+    unusedSection.style.display = 'none';
+  }
+
+  document.getElementById('tbody').innerHTML = activeRows.map(r => {
+    if (editId === r.id) {
+      return `<tr class="editing" data-id="${r.id}">
+        <td>${sel(PROJECTS, r.project, 'project')}</td>
+        <td>${sel(BANKS, r.bank, 'bank')}</td>
+        <td>${sel(PADS, r.pad, 'pad')}</td>
+        <td><input data-f="title" value="${h(r.title)}" style="min-width:130px" ${ENTER_SAVE}></td>
+        <td><input data-f="artist" value="${h(r.artist)}" style="min-width:110px" ${ENTER_SAVE}></td>
+        <td><input data-f="fx1" value="${h(r.fx1)}" ${ENTER_SAVE}></td>
+        <td><input data-f="fx2" value="${h(r.fx2)}" ${ENTER_SAVE}></td>
+        <td>${sel(['tone-set','bread/butter','personal','sad/mad','doomer','disrupt','horny','defeated','positive'], r.theme, 'theme')}</td>
+        <td>${sel(['comf','ints','mixed'], r.mood, 'mood')}</td>
+        <td><textarea data-f="notes">${h(r.notes)}</textarea></td>
+        <td class="acts">
+          <button class="ok" onclick="saveRow('${r.id}')">SAVE</button>
+          <button onclick="cancelEdit()">CANCEL</button>
+          <button class="del" onclick="delRow('${r.id}')">DEL</button>
+        </td>
+      </tr>`;
+    }
+    return `<tr data-id="${r.id}">
+      <td>${h(r.project)}</td>
+      <td><span class="pill">${h(r.bank)}</span></td>
+      <td>${h(r.pad)}</td>
+      <td><strong>${h(r.title)}</strong></td>
+      <td>${h(r.artist)}</td>
+      <td>${h(r.fx1)}</td>
+      <td>${h(r.fx2)}</td>
+      <td>${r.theme ? `<span class="tag ${tagClass(r.theme)}">${r.theme}</span>` : ''}</td>
+      <td>${r.mood ? `<span class="tag ${tagClass(r.mood)}">${r.mood}</span>` : ''}</td>
+      <td class="notes-cell">${h(r.notes)}</td>
+      <td class="acts">
+        <button onclick="editRow('${r.id}')">EDIT</button>
+        <button class="del" onclick="delRow('${r.id}')">DEL</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function sortBy(th) {
+  const col = th.dataset.col;
+  if (!col) return;
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
+  document.querySelectorAll('th').forEach(t => t.classList.remove('asc', 'desc'));
+  th.classList.add(sortDir === 1 ? 'asc' : 'desc');
+  render();
+}
+
+// ── pads: crud ───────────────────────────────────────────────────────────────
+function addRow() {
+  const last      = rows[0];
+  const project   = last ? last.project : 4;
+  const startBank = last ? last.bank    : 'A';
+  const { bank, pad } = nextAvailableSlot(project, startBank);
+  const r = { id:uid(), project, bank, pad, title:'', artist:'', fx1:'', fx2:'', theme:'tone-set', mood:'comf', notes:'' };
+  rows.unshift(r);
+  editId = r.id;
+  persist();
+}
+
+function editRow(id)   { editId = id; render(); }
+function cancelEdit()  { editId = null; render(); }
+function delUnused(id) { rows = rows.filter(r => r.id !== id); persist(); }
+
+function saveRow(id) {
+  const tr = document.querySelector(`tr[data-id="${id}"]`);
+  const r  = rows.find(x => x.id === id);
+  if (!r || !tr) return;
+  const updates = {};
+  tr.querySelectorAll('[data-f]').forEach(el => { updates[el.dataset.f] = el.value; });
+  const dup = rows.find(x =>
+    x.id !== id &&
+    String(x.project) === String(updates.project) &&
+    x.bank === updates.bank &&
+    String(x.pad) === String(updates.pad)
+  );
+  if (dup) {
+    alert(`Proj ${updates.project} / Bank ${updates.bank} / Pad ${updates.pad} is already taken by "${dup.title || 'untitled'}"`);
+    return;
+  }
+  Object.assign(r, updates);
+  editId = null;
+  persist();
+}
+
+function delRow(id) {
+  if (!confirm('Delete this entry?')) return;
+  rows = rows.filter(r => r.id !== id);
+  if (editId === id) editId = null;
+  sets.forEach(s => { s.entries = s.entries.filter(eid => eid !== id); });
+  saveSets();
+  persist();
+}
+
+// ── pads: export / import ────────────────────────────────────────────────────
+function csvContent() {
+  const fields = ['project','bank','pad','title','artist','fx1','fx2','theme','mood','notes'];
+  return [
+    fields.join(','),
+    ...rows.map(r => fields.map(f => `"${String(r[f] ?? '').replace(/"/g, '""')}"`).join(','))
+  ].join('\n');
+}
+
+function markSaved() {
+  savedJSON = JSON.stringify(rows);
+  localStorage.setItem(KEY + '_saved', savedJSON);
+  document.getElementById('banner').classList.remove('show');
+}
+
+function fallbackDownload(csv, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
+  a.download = filename;
+  a.click();
+}
+
+async function exportCSV() {
+  const csv = csvContent();
+  if (!fileHandle) {
+    try {
+      fileHandle = await window.showSaveFilePicker({
+        suggestedName: 'sp404-index.csv',
+        types: [{ description: 'CSV file', accept: { 'text/csv': ['.csv'] } }]
+      });
+    } catch (err) {
+      if (err.name !== 'AbortError') fallbackDownload(csv, 'sp404-index.csv');
+      return;
+    }
+  }
+  try {
+    const w = await fileHandle.createWritable();
+    await w.write(csv);
+    await w.close();
+  } catch {
+    fileHandle = null;
+    exportCSV();
+    return;
+  }
+  markSaved();
+}
+
+function importCSV(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const lines   = ev.target.result.split('\n').filter(l => l.trim());
+    const headers = parseRow(lines[0]);
+    rows = lines.slice(1)
+      .map(l => { const vals = parseRow(l); const r = {id:uid()}; headers.forEach((hdr,i) => r[hdr] = vals[i] ?? ''); return r; })
+      .filter(r => r.title || r.artist || r.project);
+    rows = migrate(rows);
+    savedJSON = JSON.stringify(rows);
+    localStorage.setItem(KEY, JSON.stringify(rows));
+    localStorage.setItem(KEY + '_saved', savedJSON);
+    document.getElementById('banner').classList.remove('show');
+    render();
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function parseRow(line) {
+  const out = []; let cur = '', q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { if (q && line[i+1] === '"') { cur += '"'; i++; } else q = !q; }
+    else if (c === ',' && !q) { out.push(cur); cur = ''; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
+// ── sets: list ───────────────────────────────────────────────────────────────
+function renderSets() {
+  document.getElementById('sets-list').innerHTML = sets.length === 0
+    ? '<div class="empty-msg">no sets yet — click + NEW SET to create one</div>'
+    : sets.map(s => {
+        const count = s.entries.filter(id => rows.find(r => r.id === id)).length;
+        return `<div class="set-row">
+          <span class="set-name">${h(s.name)}</span>
+          <span class="set-count">${count} track${count !== 1 ? 's' : ''}</span>
+          <div class="acts">
+            <button onclick="openBuilder('${s.id}')">EDIT</button>
+            <button onclick="exportSet('${s.id}')">EXPORT</button>
+            <button class="del" onclick="deleteSet('${s.id}')">DEL</button>
+          </div>
+        </div>`;
+      }).join('');
+}
+
+function newSet() {
+  const s = { id: uid(), name: 'New Set', entries: [] };
+  sets.unshift(s);
+  saveSets();
+  currentSetId = s.id;
+  switchView('builder');
+}
+
+function openBuilder(id) {
+  currentSetId = id;
+  switchView('builder');
+}
+
+function deleteSet(id) {
+  if (!confirm('Delete this set?')) return;
+  sets = sets.filter(s => s.id !== id);
+  saveSets();
+  renderSets();
+}
+
+// ── sets: export ─────────────────────────────────────────────────────────────
+async function pickSetsDir() {
+  try { setsDirHandle = await window.showDirectoryPicker(); } catch {}
+}
+
+async function exportSet(id) {
+  const set = sets.find(s => s.id === id);
+  if (!set) return;
+  const fields  = ['position','project','bank','pad','title','artist','fx1','fx2','theme','mood','notes'];
+  const entries = set.entries.map(eid => rows.find(r => r.id === eid)).filter(Boolean);
+  const csv     = [
+    fields.join(','),
+    ...entries.map((r, i) => fields.map(f =>
+      f === 'position' ? i + 1 : `"${String(r[f] ?? '').replace(/"/g, '""')}"`
+    ).join(','))
+  ].join('\n');
+  const filename = (set.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'set') + '.csv';
+
+  if (!setsDirHandle) {
+    try { setsDirHandle = await window.showDirectoryPicker(); }
+    catch (err) { if (err.name !== 'AbortError') fallbackDownload(csv, filename); return; }
+  }
+  try {
+    const fh = await setsDirHandle.getFileHandle(filename, { create: true });
+    const w  = await fh.createWritable();
+    await w.write(csv);
+    await w.close();
+  } catch {
+    setsDirHandle = null;
+    exportSet(id);
+  }
+}
+
+// ── sets: builder ────────────────────────────────────────────────────────────
+function renderBuilder() {
+  const set = sets.find(s => s.id === currentSetId);
+  if (!set) { switchView('sets'); return; }
+
+  document.getElementById('builder-name').value = set.name;
+
+  const inSet     = new Set(set.entries);
+  const available = rows
+    .filter(r => !isUnused(r) && !inSet.has(r.id))
+    .sort((a, b) => {
+      const pd = Number(a.project) - Number(b.project);
+      if (pd) return pd;
+      if (a.bank !== b.bank) return a.bank < b.bank ? -1 : 1;
+      return Number(a.pad) - Number(b.pad);
+    });
+
+  const setEntries = set.entries.map(eid => rows.find(r => r.id === eid)).filter(Boolean);
+
+  document.getElementById('builder-left').innerHTML = available.length === 0
+    ? '<div class="empty-msg">all pads are in the set</div>'
+    : available.map(r => `
+        <div class="bl-row">
+          ${projPill(r)}<span class="pill">${h(r.bank)}${h(r.pad)}</span>
+          <span class="row-info"><strong>${h(r.title)}</strong> <span class="artist">${h(r.artist)}</span></span>
+          <button class="arrow ok" onclick="addToSet('${r.id}')">→</button>
+        </div>`).join('');
+
+  document.getElementById('builder-right').innerHTML = setEntries.length === 0
+    ? '<div class="empty-msg">no pads in set — click → to add</div>'
+    : setEntries.map((r, i) => `
+        <div class="br-row" draggable="true"
+          ondragstart="dragStart(event,${i})" ondragover="dragOver(event,${i})"
+          ondrop="dragDrop(event,${i})" ondragleave="dragLeave(event)">
+          <span class="drag-handle">⠿</span>
+          <span class="row-num">${i + 1}</span>
+          ${projPill(r)}<span class="pill">${h(r.bank)}${h(r.pad)}</span>
+          <span class="row-info"><strong>${h(r.title)}</strong> <span class="artist">${h(r.artist)}</span></span>
+          <button class="arrow del" onclick="removeFromSet('${r.id}')">←</button>
+        </div>`).join('');
+}
+
+function saveBuilderName() {
+  const set = sets.find(s => s.id === currentSetId);
+  if (!set) return;
+  set.name = document.getElementById('builder-name').value.trim() || 'Untitled Set';
+  saveSets();
+}
+
+function addToSet(padId) {
+  const set = sets.find(s => s.id === currentSetId);
+  if (!set || set.entries.includes(padId)) return;
+  set.entries.push(padId);
+  saveSets();
+  renderBuilder();
+}
+
+function removeFromSet(padId) {
+  const set = sets.find(s => s.id === currentSetId);
+  if (!set) return;
+  set.entries = set.entries.filter(id => id !== padId);
+  saveSets();
+  renderBuilder();
+}
+
+// ── drag to reorder ──────────────────────────────────────────────────────────
+function dragStart(e, idx) {
+  dragIdx = idx;
+  setTimeout(() => e.target.classList.add('dragging'), 0);
+}
+
+function dragLeave(e) {
+  e.target.closest('.br-row')?.classList.remove('drag-over');
+}
+
+function dragOver(e, idx) {
+  e.preventDefault();
+  document.querySelectorAll('.br-row').forEach(r => r.classList.remove('drag-over'));
+  if (dragIdx !== idx) e.target.closest('.br-row')?.classList.add('drag-over');
+}
+
+function dragDrop(e, toIdx) {
+  e.preventDefault();
+  document.querySelectorAll('.br-row').forEach(r => r.classList.remove('drag-over', 'dragging'));
+  if (dragIdx === null || dragIdx === toIdx) { dragIdx = null; return; }
+  const set = sets.find(s => s.id === currentSetId);
+  if (!set) return;
+  const [moved] = set.entries.splice(dragIdx, 1);
+  set.entries.splice(toIdx, 0, moved);
+  dragIdx = null;
+  saveSets();
+  renderBuilder();
+}
+
+// ── sets: print ──────────────────────────────────────────────────────────────
+function printSet(id) {
+  const set = sets.find(s => s.id === id);
+  if (!set) return;
+  const entries = set.entries.map(eid => rows.find(r => r.id === eid)).filter(Boolean);
+
+  const tableRows = entries.map(r => `
+    <tr>
+      <td class="bold">${h(r.project)}</td>
+      <td class="bold">${h(r.bank)}${h(r.pad)}</td>
+      <td class="track-title">${h(r.title)}</td>
+      <td>${h(r.artist)}</td>
+      <td class="bold fx">${h(r.fx1)}</td>
+      <td class="bold fx">${h(r.fx2)}</td>
+      <td>${h(r.theme)}</td>
+      <td>${h(r.mood)}</td>
+      <td class="notes">${h(r.notes)}</td>
+    </tr>`).join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${h(set.name)}</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:8pt; color:#000; padding:24px; }
+    h1 { font-size:15pt; font-weight:bold; letter-spacing:-0.5px; margin-bottom:14px; }
+    table { width:100%; border-collapse:collapse; table-layout:fixed; }
+    col.c-proj   { width:30px; }
+    col.c-bp     { width:36px; }
+    col.c-title  { width:15%; }
+    col.c-artist { width:13%; }
+    col.c-fx     { width:11%; }
+    col.c-place  { width:7%; }
+    col.c-mood   { width:6%; }
+    col.c-notes  { width:auto; }
+    th { font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:1px; text-align:left; padding:4px 6px; border-top:1.5px solid #000; border-bottom:1px solid #000; }
+    td { padding:4px 6px; border-bottom:1px solid #e8e8e8; vertical-align:top; font-size:8pt; }
+    tr:nth-child(even) td { background:#f2f2f2; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    tr:last-child td { border-bottom:none; }
+    .bold { font-weight:bold; }
+    .track-title { font-weight:bold; }
+    .fx { white-space:normal; word-break:break-word; }
+    .notes { font-style:italic; color:#444; white-space:normal; }
+    @media print {
+      body { padding:0; }
+      @page { margin:0.4in; size:letter portrait; }
+    }
+  </style>
+</head>
+<body>
+  <h1>${h(set.name)}</h1>
+  <table>
+    <colgroup>
+      <col class="c-proj"><col class="c-bp">
+      <col class="c-title"><col class="c-artist">
+      <col class="c-fx"><col class="c-fx">
+      <col class="c-place"><col class="c-mood"><col class="c-notes">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Proj</th><th>B/P</th><th>Title</th><th>Artist</th>
+        <th>FX1</th><th>FX2</th><th>Theme</th><th>Mood</th><th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>${tableRows}</tbody>
+  </table>
+  <script>window.onload = () => window.print();<\/script>
+</body>
+</html>`);
+  win.document.close();
+}
+
+// ── keyboard shortcuts ───────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  const tag = document.activeElement?.tagName;
+  if (e.key === 'a' && !editId && currentView === 'pads' && tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
+    addRow();
+  }
+});
+
+load();
+</script>
+</body>
+</html>
