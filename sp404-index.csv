@@ -1,4 +1,5 @@
 project,bank,pad,title,artist,fx1,fx2,theme,mood,notes
+"2","C","1","","","","","tone-set","comf",""
 "2","C","2","Hello God","Gangsta nutt","","","bread/butter","comf",""
 "2","F","16","beep beep ","gangsta nutt ","","","tone-set","comf","i like this one - later g nutt "
 "2","F","15","my last word ","gangsta nutt ","","","sad/mad","comf","ok - sentimental - good tone but not hitting hard "
@@ -19,8 +20,7 @@ project,bank,pad,title,artist,fx1,fx2,theme,mood,notes
 "2","G","16","friday night lights (karma)","wildcard ","","","doomer","comf",""
 "2","G","15","hmm dis track ","idk ","","","tone-set","comf",""
 "2","G","14","hope it last forever","holy fam ","","","horny","comf",""
-"2","G","13","feel good guitar beat ","on one ","","","tone-set","comf","fine just gets boring after a while 
-"
+"2","G","13","feel good guitar beat ","on one ","","","tone-set","comf","fine just gets boring after a while "
 "2","G","12","ghostly song","wildcard","","","tone-set","comf","seems wack - revisit "
 "2","G","11","guitar solo song","wildcard ","","","tone-set","comf","seems wack revisit "
 "2","G","10","never change","gangsta nutt","","","tone-set","comf","five stars "
@@ -40,8 +40,8 @@ project,bank,pad,title,artist,fx1,fx2,theme,mood,notes
 "2","B","12","guitar bump ","sacro rapper ","","","tone-set","comf",""
 "2","B","11","psycho remaster","norteno rapper ","","","tone-set","comf",""
 "2","B","10","cold game ","norteno rapper ","","","tone-set","comf",""
-"2","B","9","so hi","rapstash ","","","bread/butter","comf","i like this one with a phaser 
-- LOVE "
+"2","B","9","so hi","rapstash ","","","bread/butter","comf","i like this one with a phaser "
+"- LOVE ","","","","","","","","",""
 "2","B","8","teacher parent conference","someone 509","","","tone-set","comf",""
 "2","B","7","python","wildcard","","","tone-set","comf",""
 "2","B","6","not cool","cub 1","","","tone-set","comf",""
@@ -57,8 +57,7 @@ project,bank,pad,title,artist,fx1,fx2,theme,mood,notes
 "2","A","12","gimme some mo","busta rhymes ","","","bread/butter","comf",""
 "2","A","11","meditate","lil bump 509 ","","","bread/butter","comf",""
 "2","A","10","everythings embarassing","sky ferriera","","","sad/mad","comf",""
-"2","A","9","songs for mallets","steve reich","1/8 31 38","","tone-set","comf","Press hold + then pad
-"
+"2","A","9","songs for mallets","steve reich","1/8 31 38","","tone-set","comf","Press hold + then pad"
 "2","A","8","depression rap","rap man ","Delay 1/4 45 27","","sad/mad","comf",""
 "2","A","7","when thugz cry","bizzy bone","","","bread/butter","comf",""
 "2","A","6","in my zone","rap man ","","","bread/butter","comf",""
@@ -92,7 +91,7 @@ project,bank,pad,title,artist,fx1,fx2,theme,mood,notes
 "4","G","10","","","","","early","comf",""
 "4","G","9","wizard of oz - 2","wizard of oz ","","","tone-set","comf",""
 "4","G","8","wizard of oz - 1","wizard of oz","","","tone-set","comf",""
-"4","G","7","every rain","country man ","","","defeated","comf",""
+"4","G","7","every rain","country man ","delay 1/4 32 18","chorus 23 1.47 88-12","defeated","comf",""
 "4","G","6","dirty lil nigga","gucci mane","","","bread/butter","mixed",""
 "4","G","5","well off g's ","terry kennedy","","","bread/butter","mixed",""
 "4","G","4","caddyshack theme - b","kenny loggins","","","personal","comf",""
