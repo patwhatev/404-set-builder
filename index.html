@@ -19,6 +19,7 @@
     .tab { background:none; border:none; border-bottom:2px solid transparent; color:#555; padding:0 18px; font-family:inherit; font-size:11px; letter-spacing:2px; cursor:pointer; }
     .tab:hover { color:#999; background:none; border-bottom-color:#333; }
     .tab.active { color:#2ecc71; border-bottom-color:#2ecc71; }
+    .header-acts { display:flex; gap:8px; align-items:center; padding:0 16px; }
 
     /* buttons */
     button { background:#1a1a1a; color:#aaa; border:1px solid #333; padding:5px 12px; cursor:pointer; font-family:inherit; font-size:11px; letter-spacing:1px; transition:background .1s,color .1s,border-color .1s; }
@@ -119,6 +120,13 @@
     <button class="tab active" data-view="pads" onclick="switchView('pads')">PADS</button>
     <button class="tab" data-view="sets" onclick="switchView('sets')">SETS</button>
   </nav>
+  <div class="header-acts">
+    <label>
+      <button onclick="this.closest('label').querySelector('input').click()" title="Restore pads + sets from a snapshot file">IMPORT SNAPSHOT</button>
+      <input type="file" accept=".json,application/json" onchange="importSnapshot(event)">
+    </label>
+    <button class="ok" onclick="exportSnapshot()" title="Save pads + sets to a file you can move to another machine">EXPORT SNAPSHOT</button>
+  </div>
 </header>
 
 <!-- PADS VIEW -->
@@ -455,9 +463,9 @@ function markSaved() {
   document.getElementById('banner').classList.remove('show');
 }
 
-function fallbackDownload(csv, filename) {
+function fallbackDownload(content, filename, type = 'text/csv') {
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
+  a.href = URL.createObjectURL(new Blob([content], { type }));
   a.download = filename;
   a.click();
 }
@@ -518,6 +526,66 @@ function parseRow(line) {
   }
   out.push(cur);
   return out;
+}
+
+// ── snapshot: export / import ────────────────────────────────────────────────
+// A snapshot holds pads AND sets (with their ids intact), so set membership
+// survives a move between machines — unlike CSV, which re-ids every pad.
+const SNAPSHOT_VERSION = 1;
+
+async function exportSnapshot() {
+  const json = JSON.stringify({
+    app: 'sp404', version: SNAPSHOT_VERSION, exportedAt: new Date().toISOString(), rows, sets
+  }, null, 2);
+  const filename = `sp404-snapshot-${new Date().toISOString().slice(0, 10)}.json`;
+  try {
+    const fh = await window.showSaveFilePicker({
+      suggestedName: filename,
+      types: [{ description: 'SP-404 snapshot', accept: { 'application/json': ['.json'] } }]
+    });
+    const w = await fh.createWritable();
+    await w.write(json);
+    await w.close();
+  } catch (err) {
+    if (err.name === 'AbortError') return;
+    fallbackDownload(json, filename, 'application/json');
+  }
+  markSaved();
+}
+
+function importSnapshot(e) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    let snap;
+    try { snap = JSON.parse(ev.target.result); } catch { alert('Not a valid snapshot file.'); return; }
+    if (snap?.app !== 'sp404' || !Array.isArray(snap.rows) || !Array.isArray(snap.sets)) {
+      alert('Not an SP-404 snapshot file.'); return;
+    }
+    if (snap.version > SNAPSHOT_VERSION) {
+      alert('This snapshot was made by a newer version of this app.'); return;
+    }
+    const when = snap.exportedAt ? ` from ${new Date(snap.exportedAt).toLocaleString()}` : '';
+    if (!confirm(`Replace all current pads and sets with snapshot${when}?\n` +
+                 `${snap.rows.length} pads, ${snap.sets.length} sets`)) return;
+
+    rows = deduplicate(migrate(snap.rows.map(r => ({ ...r, id: r.id || uid() }))));
+    const ids = new Set(rows.map(r => r.id));
+    sets = snap.sets.map(s => ({
+      id: s.id || uid(),
+      name: s.name || 'Untitled Set',
+      entries: (s.entries || []).filter(eid => ids.has(eid))
+    }));
+    editId = null;
+    currentSetId = null;
+    saveSets();
+    localStorage.setItem(KEY, JSON.stringify(rows));
+    markSaved();
+    switchView(currentView === 'builder' ? 'sets' : currentView);
+  };
+  reader.readAsText(file);
 }
 
 // ── sets: list ───────────────────────────────────────────────────────────────
